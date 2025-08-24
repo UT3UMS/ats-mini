@@ -104,7 +104,6 @@ void drawSideBar(uint16_t cmd, int x, int y, int sx);
 bool doSideBar(uint16_t cmd, int dir);
 void doSelectDigit(int dir);
 bool clickHandler(uint16_t cmd, bool shortPress);
-void selectBand(uint8_t idx, bool drawLoadingSSB = true);
 int getTotalBands();
 int getTotalModes();
 int getTotalMemories();
@@ -131,5 +130,4 @@ void doCal(int dir);
 void doStep(int dir);
 void doMode(int dir);
 void doBand(int dir);
-
 #endif // MENU_H

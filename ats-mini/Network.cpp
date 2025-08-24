@@ -53,6 +53,7 @@ static const String webThemeSelector();
 static const String webRadioPage();
 static const String webMemoryPage();
 static const String webConfigPage();
+static const String radioControl();
 
 //
 // Delayed WiFi connection
@@ -303,6 +304,14 @@ static bool wifiConnect()
   }
 }
 
+static const int getbandId(String bandName) {
+  for (int i = 0; i < getTotalBands(); i++) {
+    if (String(bands[i].bandName) == bandName) return i;
+  }
+
+  return -1;
+}
+
 //
 // Initialize internal web server
 //
@@ -329,6 +338,50 @@ static void webInit()
 
   // This method saves configuration form contents
   server.on("/setconfig", HTTP_ANY, webSetConfig);
+
+  // This controller is to set frequency directly
+  server.on("/rx", HTTP_GET, [](AsyncWebServerRequest *request) {
+    if (request->hasParam("f")) {
+      String fValue = request->getParam("f")->value();
+      int f = fValue.toInt();
+      updateFrequency(f, true);
+      request->send(200, "text/plain", String(currentFrequency));
+    } else {
+      request->send(400, "text/plain", "Missing 'f' parameter");
+    }
+  });
+
+  // This controller is to set band. Either HF or VHF
+  server.on("/band", HTTP_GET, [](AsyncWebServerRequest *request) {
+  if (request->hasParam("bandId")) {
+    String value = request->getParam("bandId")->value();
+    selectBand(value.toInt());
+
+    request->send(200, "text/plain", String(getbandId(getCurrentBand()->bandName)));
+  } else {
+    request->send(400, "text/plain", "Missing 'vhf'");
+  }
+  });
+
+  server.on("/mode", HTTP_GET, [](AsyncWebServerRequest *request) {
+  if (request->hasParam("modeId")) {
+    String value = request->getParam("modeId")->value();
+    setMode(value.toInt());
+    request->send(200, "text/plain", String(currentMode));
+  } else {
+    request->send(400, "text/plain", "Missing 'vhf'");
+  }
+  });
+
+  server.on("/sound", HTTP_GET, [](AsyncWebServerRequest *request) {
+  if (request->hasParam("vol")) {
+    String value = request->getParam("vol")->value();
+    setVolume(value.toInt());
+    request->send(200, "text/plain", String(volume));
+  } else {
+    request->send(400, "text/plain", "Missing 'vhf'");
+  }
+  });
 
   // Start web server
   server.begin();
@@ -421,70 +474,268 @@ static const String webInputField(const String &name, const String &value, bool 
   );
 }
 
-static const String webStyleSheet()
-{
+static const String webStyleSheet() {
   return
-"BODY"
-"{"
+"body {"
   "margin: 0;"
   "padding: 0;"
+  "font-family: sans-serif;"
+  "background-color: #f8f8f8;"
 "}"
-"H1"
-"{"
+
+"h1 {"
   "text-align: center;"
 "}"
-"TABLE"
-"{"
+
+"table {"
   "width: 100%;"
   "max-width: 768px;"
-  "border: 0px;"
-  "margin-left: auto;"
-  "margin-right: auto;"
+  "margin: 0 auto;"
+  "border: 0;"
 "}"
-"TH, TD"
-"{"
+
+"th, td {"
   "padding: 0.5em;"
 "}"
-"TH.HEADING"
-"{"
+
+"th.heading {"
   "background-color: #80A0FF;"
-  "column-span: all;"
   "text-align: center;"
 "}"
-"TD.LABEL"
-"{"
+
+"td.label {"
   "text-align: right;"
 "}"
-"INPUT[type=text], INPUT[type=password], SELECT"
-"{"
-  "width: 95%;"
+
+/* === Control Panel === */
+".control-panel {"
+  "max-width: 768px;"
+  "margin: 1em auto;"
+  "padding: 1em;"
+  "box-sizing: border-box;"
+"}"
+
+".frequency-block {"
+  "text-align: center;"
+  "margin-bottom: 1em;"
+"}"
+
+".freq-label {"
+  "display: block;"
+  "font-size: 1.2em;"
+  "margin-bottom: 0.5em;"
+"}"
+
+".freq-row {"
+  "display: flex;"
+  "justify-content: center;"
+  "align-items: center;"
+  "gap: 10px;"
+"}"
+
+".freq-input {"
+  "width: 120px;"
   "padding: 0.5em;"
+  "font-size: 1.5em;"
+  "text-align: center;"
+  "border: 1px solid #ccc;"
+  "border-radius: 4px;"
 "}"
-"INPUT[type=submit]"
-"{"
-  "width: 50%;"
-  "padding: 0.5em 0;"
+
+".step-btn {"
+  "padding: 0.6em 1em;"
+  "font-size: 1.5em;"
+  "background-color: #e0e0e0;"
+  "border: none;"
+  "border-radius: 4px;"
+  "cursor: pointer;"
 "}"
-".CENTER"
-"{"
+
+".step-btn:active {"
+  "background-color: #ccc;"
+"}"
+
+".selectors {"
+  "display: flex;"
+  "justify-content: center;"
+  "flex-wrap: wrap;"
+  "gap: 10px;"
+"}"
+
+".selector {"
+  "min-width: 100px;"
   "text-align: center;"
 "}"
+
+".selector select, .selector input {"
+  "width: 100%;"
+  "padding: 0.5em;"
+  "font-size: 1em;"
+  "border: 1px solid #ccc;"
+  "border-radius: 4px;"
+"}"
+
+".selector label {"
+  "display: block;"
+  "margin-bottom: 0.2em;"
+  "font-size: 0.9em;"
+"}"
+/* Volume + other inline controls */
+".control-block {"
+  "display: flex;"
+  "flex-direction: column;"
+  "align-items: center;"
+  "margin: 1em auto;"
+  "max-width: 200px;"
+"}"
+
+/* Reuse label style */
+".control-label {"
+  "font-weight: bold;"
+  "margin-bottom: 0.3em;"
+  "text-align: center;"
+"}"
+
+/* Volume slider */
+".control-slider {"
+  "width: 100%;"
+  "appearance: none;"
+  "height: 6px;"
+  "background: #ccc;"
+  "border-radius: 4px;"
+  "outline: none;"
+"}"
+
+".control-slider::-webkit-slider-thumb {"
+  "appearance: none;"
+  "width: 16px;"
+  "height: 16px;"
+  "background: #333;"
+  "border-radius: 50%;"
+  "cursor: pointer;"
+"}"
+
+".control-slider::-moz-range-thumb {"
+  "width: 16px;"
+  "height: 16px;"
+  "background: #333;"
+  "border-radius: 50%;"
+  "cursor: pointer;"
+"}"
+".status-indicator {"
+  "font-weight: bold;"
+  "font-size: 0.6em;"
+  "vertical-align: super;"
+  "margin-left: 0.25em;"
+"}"
+;
+}
+
+
+static const String getControlScript() {
+  return
+    "const RFendpoint = '/rx?f=';"
+    "const bandsEndpoint = '/band?bandId=';"
+    "const modesEndpoint = '/mode?modeId=';"
+    "const volumeEndpoint = '/sound?vol=';"
+
+    "let step = 1;"
+
+    "function handleChange(listenee, endpoint, viewProcessor = console.log, failsafe = console.error) {"
+      "const currentValue = parseInt(document.getElementById(listenee).value);"
+
+      "const indicator = document.getElementById('statusIndicator');"
+
+      "if (indicator) {"
+        "indicator.textContent = '...';"
+      "}"
+
+      "fetch(endpoint + currentValue)"
+        ".then(r => r.text())"
+        ".then(result => {"
+          "if (indicator) indicator.textContent = 'OK';"
+          "viewProcessor(result);"
+        "})"
+        ".catch(error => {"
+          "if (indicator) indicator.textContent = '!!';"
+          "failsafe(error);"
+        "})"
+        ".finally(() => {"
+          "setTimeout(() => {"
+            "if (indicator) indicator.textContent = '⯿';"
+          "}, 1500);"
+        "});"
+    "}"
+
+    "function refreshField(fieldName, value) {"
+      "const element = document.getElementById(fieldName);"
+      "if (element) element.value = value;"
+    "}"
+
+    "const updateBand = newValue => {"
+      "refreshField('bandsSelector', newValue);"
+    "};"
+
+    "function handleBandsChange() {"
+      "return handleChange('bandsSelector', bandsEndpoint, updateBand);"
+    "}"
+
+    "const updateMode = newValue => {"
+      "refreshField('modesSelector', newValue);"
+    "};"
+
+    "function handleModesChange() {"
+      "return handleChange('modesSelector', modesEndpoint, updateMode);"
+    "}"
+
+    "const updateFrequencyView = newValue => {"
+      "refreshField('numInput', newValue);"
+      "refreshField('freq', newValue);"
+    "};"
+
+    "function updateFrequency() {"
+      "return handleChange('numInput', RFendpoint, updateFrequencyView);"
+    "}"
+
+    "const updateVolumeView = newValue => {"
+      "refreshField('soundVolume', newValue);"
+    "};"
+
+    "function handleVolumeChange() {"
+      "return handleChange('volumeDial', volumeEndpoint, updateVolumeView);"
+    "}"
+
+    "function changeFrequency(delta) {"
+      "const input = document.getElementById('numInput');"
+      "let current = parseInt(input.value, 10);"
+      "current += delta;"
+      "input.value = current;"
+      "updateFrequency();"
+    "}"
+
+    "function handleStepChange() {"
+      "step = parseInt(document.getElementById('stepInput').value) || 1;"
+    "}"
+
 ;
 }
 
 static const String webPage(const String &body)
 {
   return
-"<!DOCTYPE HTML>"
-"<HTML>"
-"<HEAD>"
-  "<META CHARSET='UTF-8'>"
-  "<META NAME='viewport' CONTENT='width=device-width, initial-scale=1.0'>"
-  "<TITLE>ATS-Mini Config</TITLE>"
-  "<STYLE>" + webStyleSheet() + "</STYLE>"
-"</HEAD>"
-"<BODY STYLE='font-family: sans-serif;'>" + body + "</BODY>"
-"</HTML>"
+    "<!DOCTYPE HTML>"
+      "<HTML>"
+        "<HEAD>"
+          "<META CHARSET='UTF-8'>"
+          "<META NAME='viewport' CONTENT='width=device-width, initial-scale=1.0'>"
+          "<TITLE>ATS-Mini Config</TITLE>"
+          "<STYLE>" + webStyleSheet() + "</STYLE>"
+          "<SCRIPT>" + getControlScript() + "</SCRIPT>"
+        "</HEAD>"
+        "<BODY STYLE='font-family: sans-serif;'>"
+          + body +
+        "</BODY>"
+      "</HTML>"
 ;
 }
 
@@ -527,13 +778,94 @@ static const String webThemeSelector()
   return(result);
 }
 
+static const String bandsOptions() {
+  String options = "";
+
+  for (int i = 0; i < getTotalBands(); i++) {
+    char text[64];
+
+    sprintf(text,
+      "<OPTION VALUE='%d'%s>%s</OPTION>",
+      i,
+      (i == bandIdx) ? " SELECTED" : "",
+      String(bands[i].bandName)
+      );
+
+    options += text;
+  }
+
+  return(options);
+}
+
+String modesOptions() {
+  String options = "";
+
+  for (int i = 0; i < getTotalModes(); i++) {
+    char text[64];
+
+    sprintf(text,
+      "<OPTION VALUE='%d'%s>%s</OPTION>",
+      i,
+      (i == currentMode) ? " SELECTED" : "",
+      bandModeDesc[i]
+    );
+
+    options += text;
+  }
+
+  return options;
+}
+
+static const String radioControl() {
+  return
+    "<div class='control-panel'>"
+      "<div class='frequency-block'>"
+        "<label for='numInput' class='freq-label'>Frequency (kHz) "
+          "<span class='status-indicator' id='statusIndicator'>⯿</span>"
+        "</label>"
+        "<div class='freq-row'>"
+          "<button onclick='changeFrequency(-step)' class='step-btn'>&laquo;</button>"
+             "<input id='numInput' type='number' value='" + String(currentFrequency) + "' step='1' min='0' max='40000' onchange='updateFrequency()' placeholder='Enter Frequency' class='freq-input'>"
+          "<button onclick='changeFrequency(step)' class='step-btn'>&raquo;</button>"
+        "</div>"
+      "</div>"
+
+      "<div class='selectors'>"
+        "<div class='selector'>"
+          "<label for='bandsSelector'>Band</label><br>"
+          "<select id='bandsSelector' onchange='handleBandsChange()'>" + bandsOptions() + "</select>"
+        "</div>"
+
+        "<div class='selector'>"
+          "<label for='modesSelector'>Mode</label><br>"
+          "<select id='modesSelector' onchange='handleModesChange()'>" + modesOptions() + "</select>"
+        "</div>"
+
+        "<div class='selector'>"
+          "<label for='stepInput'>Step</label><br>"
+          "<input id='stepInput' type='number' value='1' min='1' max='10000' onchange='handleStepChange()'>"
+        "</div>"
+      "</div>"
+      "<div class='control-block'>"
+        "<input id='soundVolume' type='text' value='" + volume + "' disabled class='volume-display' />"
+        "<label for='volumeDial' class='control-label'>Volume</label>"
+        "<input id='volumeDial' type='range' value='" + volume + "' min='0' max='63' onchange='handleVolumeChange()' class='control-slider' />"
+      "</div>"
+    "</div>";
+}
+
+
+static const String getFreq() {
+  return currentMode == FM?
+    String(currentFrequency / 100.0) + "MHz "
+  : String(currentFrequency + currentBFO / 1000.0) + "kHz ";
+}
+
 static const String webRadioPage()
 {
   String ip = "";
   String ssid = "";
-  String freq = currentMode == FM?
-    String(currentFrequency / 100.0) + "MHz "
-  : String(currentFrequency + currentBFO / 1000.0) + "kHz ";
+  String freq = getFreq();
 
   if(WiFi.status()==WL_CONNECTED)
   {
@@ -553,6 +885,9 @@ static const String webRadioPage()
 "</P>"
 "<TABLE COLUMNS=2>"
 "<TR>"
+  "<TD COLSPAN=2>" + String(radioControl()) + "</TD>"
+"</TR>"
+"<TR>"
   "<TD CLASS='LABEL'>IP Address</TD>"
   "<TD><A HREF='http://" + ip + "'>" + ip + "</A> (" + ssid + ")</TD>"
 "</TR>"
@@ -570,7 +905,7 @@ static const String webRadioPage()
 "</TR>"
 "<TR>"
   "<TD CLASS='LABEL'>Frequency</TD>"
-  "<TD>" + freq + String(bandModeDesc[currentMode]) + "</TD>"
+"<TD>" + "<SPAN ID='freq'>" + freq + "</SPAN>" + String(bandModeDesc[currentMode]) + "</TD>"
 "</TR>"
 "<TR>"
   "<TD CLASS='LABEL'>Signal Strength</TD>"

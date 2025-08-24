@@ -177,6 +177,7 @@ bool doSeek(int8_t dir);
 bool clickFreq(bool shortPress);
 uint8_t doAbout(int dir);
 bool checkStopSeeking();
+bool updateFrequency(int newFreq, bool wrap = true);
 
 // Battery.c
 float batteryMonitor();
@@ -207,6 +208,11 @@ bool ntpSyncTime();
 
 void netRequestConnect();
 void netTickTime();
+
+// Menu.cpp
+int setMode(int modeIdx);
+int setVolume(int vol);
+void selectBand(uint8_t idx, bool drawLoadingSSB = true);
 
 // Ble.cpp
 int bleDoCommand(uint8_t bleModeIdx);

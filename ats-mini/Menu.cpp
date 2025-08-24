@@ -522,6 +522,15 @@ void doVolume(int dir)
   if(!muteOn()) rx.setVolume(volume);
 }
 
+int setVolume(int vol) {
+  volume = max(vol, 0);
+  volume = min(vol, 63);
+
+  if(!muteOn()) rx.setVolume(volume);
+
+  return volume;
+}
+
 static void clickVolume(bool shortPress)
 {
   if(shortPress) muteOn(!muteOn()); else currentCmd = CMD_NONE;
@@ -778,6 +787,32 @@ void doMode(int dir)
 
   // Enable the new band
   selectBand(bandIdx);
+}
+
+int setMode(int modeId)
+{
+  // This is our current mode for the current band
+  currentMode = bands[bandIdx].bandMode;
+
+  // Cannot change away from FM mode
+  if(currentMode==FM) return -1;
+
+  // Change AM/LSB/USB modes, do not allow FM mode
+  do
+    //currentMode = wrap_range(currentMode, dir, 0, LAST_ITEM(bandModeDesc));
+    currentMode = modeId;
+
+  while(currentMode==FM);
+
+  // Save current band settings
+  bands[bandIdx].currentFreq = currentFrequency + currentBFO / 1000;
+  bands[bandIdx].currentStepIdx = defaultStepIdx[currentMode];
+  bands[bandIdx].bandwidthIdx = defaultBwIdx[currentMode];
+  bands[bandIdx].bandMode = currentMode;
+
+  // Enable the new band
+  selectBand(bandIdx);
+  return bands[bandIdx].bandMode;
 }
 
 void doSquelch(int dir)
