@@ -26,9 +26,9 @@ static void drawAboutCommon(uint8_t arrow)
   if(arrow & 1) spr.fillTriangle(307, 12, 301, 8, 301, 16, TH.text_muted);
 
   spr.setTextDatum(TL_DATUM);
-  spr.setTextColor(TH.text_muted, TH.bg);
+  spr.setTextColor(TH.text_muted);
   spr.drawString(RECEIVER_DESC, 0, 0, 4);
-  spr.setTextColor(TH.text, TH.bg);
+  spr.setTextColor(TH.text);
   spr.drawString(getVersion(), 2, 25, 2);
 }
 

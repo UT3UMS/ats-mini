@@ -34,3 +34,14 @@ The recovery process is as follows:
 5. Release the BOOT button
 
 The receiver will enter into the recovery mode and you can flash the ESP32-S3 controller as usual.
+
+If your radio only has the BOOT button, use a slightly different recovery sequence:
+
+1. Connect the receiver via USB to a computer
+2. Press and hold the BOOT button
+3. Power on the receiver
+4. Release the BOOT button
+
+The receiver will enter into the recovery mode and you can flash the ESP32-S3 controller as usual.
+
+If your radio doesn't have the BOOT button pads at all, you can short the ESP32-S3 pin 27 (GPIO0) to the ground to simulate the BOOT button press.

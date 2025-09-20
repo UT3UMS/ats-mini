@@ -47,7 +47,7 @@ HALF_STEP=1 PORT=/dev/tty.usbmodem14401 make upload
 
 ## Decoding stack traces
 
-To decode a stack trace (printed via serial port) use the following tool: https://esphome.github.io/esp-stacktrace-decoder/
+To decode a stack trace (printed via serial port) use the following tool: <https://esphome.github.io/esp-stacktrace-decoder/>
 
 ## Enabling the pre-commit hooks
 

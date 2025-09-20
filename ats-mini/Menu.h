@@ -101,8 +101,8 @@ static inline bool isSettingsMode(uint16_t cmd)
 
 uint8_t seekMode(bool toggle = false);
 void drawSideBar(uint16_t cmd, int x, int y, int sx);
-bool doSideBar(uint16_t cmd, int dir);
-void doSelectDigit(int dir);
+bool doSideBar(uint16_t cmd, int16_t enc, int16_t enca);
+void doSelectDigit(int16_t enc);
 bool clickHandler(uint16_t cmd, bool shortPress);
 int getTotalBands();
 int getTotalModes();
@@ -110,7 +110,7 @@ int getTotalMemories();
 Band *getCurrentBand();
 uint8_t getFreqInputPos();
 int getFreqInputStep();
-const Step *getCurrentStep(bool fast = false);
+const Step *getCurrentStep();
 const Bandwidth *getCurrentBandwidth();
 uint8_t getRDSMode();
 
@@ -119,15 +119,16 @@ int getTotalUTCOffsets();
 int getTotalFmRegions();
 int getTotalBleModes();
 
-void doSoftMute(int dir);
-void doAgc(int dir);
-void doAvc(int dir);
-void doFmRegion(int dir);
-void doBandwidth(int dir);
-void doVolume(int dir);
-void doBrt(int dir);
-void doCal(int dir);
-void doStep(int dir);
-void doMode(int dir);
-void doBand(int dir);
+void doSoftMute(int16_t enc);
+void doAgc(int16_t enc);
+void doAvc(int16_t enc);
+void doFmRegion(int16_t enc);
+void doBandwidth(int16_t enc);
+void doVolume(int16_t enc);
+void doBrt(int16_t enc);
+void doCal(int16_t enc);
+void doStep(int16_t enc);
+void doMode(int16_t enc);
+void doBand(int16_t enc);
+
 #endif // MENU_H

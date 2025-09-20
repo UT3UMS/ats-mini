@@ -2,6 +2,7 @@
 #include "Common.h"
 #include "Themes.h"
 #include "Button.h"
+#include "Utils.h"
 #include "Menu.h"
 #include "Draw.h"
 
@@ -9,9 +10,6 @@
 #include "patch_init.h"
 
 extern ButtonTracker pb1;
-
-// Current mute status, returned by muteOn()
-static bool muted = false;
 
 // Current sleep status, returned by sleepOn()
 static bool sleep_on = false;
@@ -77,10 +75,7 @@ void loadSSB(uint8_t bandwidth, bool draw)
   if(!ssbLoaded)
   {
     if(draw) drawMessage("Loading SSB");
-    // You can try rx.setI2CFastModeCustom(700000); or greater value
-    rx.setI2CFastModeCustom(400000);
     rx.loadPatch(ssb_patch_content, sizeof(ssb_patch_content), bandwidth);
-    rx.setI2CFastModeCustom(100000);
     ssbLoaded = true;
   }
 }
@@ -92,54 +87,103 @@ void unloadSSB()
 }
 
 //
-// Mute sound on (1) or off (0), or get current status (2)
-//
-bool muteOn(int x)
-{
-  if((x==0) && muted)
-  {
-    rx.setVolume(volume);
-    // Enable audio amplifier to restore speaker output
-    digitalWrite(PIN_AMP_EN, HIGH);
-    rx.setHardwareAudioMute(false);
-    muted = false;
-  }
-  else if((x==1) && !muted)
-  {
-    rx.setVolume(0);
-    // Disable audio amplifier to silence speaker
-    digitalWrite(PIN_AMP_EN, LOW);
-    rx.setHardwareAudioMute(true);
-    muted = true;
-  }
-
-  return(muted);
-}
-
-//
-// Temporarily mute sound on (true) or off (false) if not in a permanent mute state
+// Mute sound on (x=1) or off (x=0), or get current status (x=2)
 // Do not call this too often because a short PIN_AMP_EN impulse can trigger amplifier mode D,
 // see the NS4160 datasheet https://esp32-si4732.github.io/ats-mini/hardware.html#datasheets
 //
-void tempMuteOn(bool x)
+bool muteOn(uint8_t mode, int x)
 {
-  if(!muteOn(2))
-  {
-    if(x)
-    {
-      digitalWrite(PIN_AMP_EN, LOW);
-      rx.setVolume(0);
-      rx.setHardwareAudioMute(true);
+  // Current mute status
+  static bool muted = false;
+
+  // Current squelch status
+  static bool squelched = false;
+
+  // Effective mute status
+  static bool status = false;
+
+  bool unmute = false;
+  bool mute = false;
+
+  if(x==1) {
+    status = true;
+    switch(mode) {
+    case MUTE_FORCE:
+      mute = true;
+      break;
+    case MUTE_MAIN:
+      if(!muted && !squelched) {
+        mute = true;
+      }
+      muted = true;
+      break;
+    case MUTE_SQUELCH:
+      if(!muted && !squelched) {
+        mute = true;
+      }
+      squelched = true;
+      break;
+    case MUTE_TEMP:
+      if(!muted && !squelched) {
+        mute = true;
+      }
+      break;
     }
-    else
-    {
-      rx.setHardwareAudioMute(false);
-      rx.setVolume(volume);
-      digitalWrite(PIN_AMP_EN, HIGH);
+  } else if(x==0) {
+    status = false;
+    switch(mode) {
+    case MUTE_FORCE:
+      unmute = true;
+      break;
+    case MUTE_MAIN:
+      if(muted && !squelched) {
+        unmute = true;
+      }
+      muted = false;
+      break;
+    case MUTE_SQUELCH:
+      if(!muted && squelched) {
+        unmute = true;
+      }
+      squelched = false;
+      break;
+    case MUTE_TEMP:
+      if(!muted && !squelched) {
+        unmute = true;
+      }
+      break;
     }
   }
-}
 
+  if(mute) {
+    // Disable audio amplifier to silence speaker
+    digitalWrite(PIN_AMP_EN, LOW);
+    // Activate the mute circuit
+    digitalWrite(AUDIO_MUTE, HIGH);
+    delay(50);
+    rx.setAudioMute(true);
+  }
+
+  if(unmute) {
+    // Deactivate the mute circuit
+    digitalWrite(AUDIO_MUTE, LOW);
+    delay(50);
+    rx.setAudioMute(false);
+    // Enable audio amplifier to restore speaker output
+    digitalWrite(PIN_AMP_EN, HIGH);
+  }
+
+  switch(mode) {
+  case MUTE_MAIN:
+    return muted;
+  case MUTE_SQUELCH:
+    return squelched;
+  case MUTE_FORCE:
+  case MUTE_TEMP:
+  default:
+    return status;
+  }
+}
 
 //
 // Turn sleep on (1) or off (0), or get current status (2)
@@ -165,7 +209,7 @@ bool sleepOn(int x)
       netStop();
 
       // Unmute squelch
-      if(squelchCutoff) tempMuteOn(false);
+      if(muteOn(MUTE_SQUELCH) && !muteOn(MUTE_MAIN)) muteOn(MUTE_FORCE, false);
 
       while(true)
       {
@@ -196,7 +240,7 @@ bool sleepOn(int x)
       rtc_gpio_pulldown_dis((gpio_num_t)ENCODER_PUSH_BUTTON);
       rtc_gpio_deinit((gpio_num_t)ENCODER_PUSH_BUTTON);
       pinMode(ENCODER_PUSH_BUTTON, INPUT_PULLUP);
-      if(squelchCutoff) tempMuteOn(true);
+      if(muteOn(MUTE_SQUELCH) && !muteOn(MUTE_MAIN)) muteOn(MUTE_FORCE, true);
       sleepOn(false);
       // Enable WiFi
       netInit(wifiModeIdx, false);

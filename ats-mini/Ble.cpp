@@ -1,7 +1,8 @@
 #include "Common.h"
 #include "Themes.h"
-#include "NimBLEDevice.h"
-#include "NuSerial.hpp"
+#include "Ble.h"
+
+NordicUART BLESerial = NordicUART(RECEIVER_NAME);
 
 //
 // Get current connection status
@@ -9,8 +10,8 @@
 //
 int8_t getBleStatus()
 {
-  if(!NimBLEDevice::isInitialized()) return 0;
-  return NimBLEDevice::getServer()->getConnectedCount() > 0 ? 1 : -1;
+  if(!BLESerial.isStarted()) return 0;
+  return BLEDevice::getServer()->getConnectedCount() > 0 ? 1 : -1;
 }
 
 //
@@ -18,10 +19,8 @@ int8_t getBleStatus()
 //
 void bleStop()
 {
-  if(!NimBLEDevice::isInitialized()) return;
-  NuSerial.stop();
-  // Full deinit
-  NimBLEDevice::deinit(true);
+  if(!BLESerial.isStarted()) return;
+  BLESerial.stop();
 }
 
 void bleInit(uint8_t bleMode)
@@ -29,21 +28,17 @@ void bleInit(uint8_t bleMode)
   bleStop();
 
   if(bleMode == BLE_OFF) return;
-
-  NimBLEDevice::init(RECEIVER_NAME);
-  NimBLEDevice::setPower(ESP_PWR_LVL_N0); // N12, N9, N6, N3, N0, P3, P6, P9
-  NimBLEDevice::getAdvertising()->setName(RECEIVER_NAME);
-  NuSerial.start();
+  BLESerial.start();
 }
 
 int bleDoCommand(uint8_t bleMode)
 {
   if(bleMode == BLE_OFF) return 0;
 
-  if (NuSerial.isConnected()) {
-    if (NuSerial.available()) {
-      char bleChar = NuSerial.read();
-      Serial.print(bleChar);
+  if (BLEDevice::getServer()->getConnectedCount() > 0) {
+    if (BLESerial.available()) {
+      char bleChar = BLESerial.read();
+      BLESerial.write(bleChar);
     }
   }
   return 0;

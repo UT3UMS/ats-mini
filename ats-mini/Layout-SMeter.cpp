@@ -57,7 +57,7 @@ static void drawSmallScale(uint32_t freq, int y)
   spr.fillCircle(scaleStart + (scaleEnd-scaleStart) * (freq - band->minimumFreq) / (band->maximumFreq - band->minimumFreq), y, 3, TH.scale_pointer);
 
   char lim[8];
-  spr.setTextColor(TH.scale_text, TH.bg);
+  spr.setTextColor(TH.scale_text);
   spr.setTextDatum(MC_DATUM);
   if(band->bandType==FM_BAND_TYPE)
     sprintf(lim, "%0.2f", band->minimumFreq/100.00);
@@ -87,19 +87,32 @@ static void drawAltStereoIndicator(int x, int y, bool stereo = true)
 static void drawLargeSMeter(int rssi, int strength, int x, int y)
 {
   // S-Meter legend
-  for(int i=x; i<=x+15*16 + 2; i+=2) spr.drawPixel(i, 28+y, TH.scale_line);
   spr.setTextDatum(TC_DATUM);
-  spr.setTextColor(TH.scale_text, TH.bg);
+  spr.setTextColor(TH.scale_text);
 
+  int last_x = x;
   for(int i=0; i<16; i++)
   {
     if(i%2)
     {
-      if(i < 10)  spr.drawNumber(i, x+(i*15)-13, 20+y, 2);
-      if(i == 11) spr.drawString("+20", x+(i*15)-13, 20+y, 2);
-      if(i == 13) spr.drawString("+40", x+(i*15)-13, 20+y, 2);
-      if(i == 15) spr.drawString("+60", x+(i*15)-13, 20+y, 2);
+      int text_width = 0;
+      int text_x = x + (i * 15) - 13;
+      if(i < 10)  text_width = spr.drawNumber(i, text_x, 20+y, 2);
+      if(i == 11) text_width = spr.drawString("+20", text_x, 20+y, 2);
+      if(i == 13) text_width = spr.drawString("+40", text_x, 20+y, 2);
+      if(i == 15) text_width = spr.drawString("+60", text_x, 20+y, 2);
+
+      // Draw the dotted line from end of previous number to start of current number
+      for(int px=last_x; px<text_x-text_width/2; px++) {
+        if(px & 1) spr.drawPixel(px, 28+y, TH.scale_line);
+      }
+      last_x = text_x + text_width/2;
     }
+  }
+
+  // Draw the remaining dotted line after the last number
+  for(int px=last_x; px <= x+15*16+2; px++) {
+    if(px & 1) spr.drawPixel(px, 28+y, TH.scale_line);
   }
 
   spr.setTextDatum(BL_DATUM);
@@ -119,7 +132,7 @@ static void drawLargeSMeter(int rssi, int strength, int x, int y)
 
 static void drawLargeSNMeter(int snr, int x, int y)
 {
-  spr.setTextColor(TH.scale_text, TH.bg);
+  spr.setTextColor(TH.scale_text);
   spr.setTextDatum(BL_DATUM);
   spr.drawString("N", x - 10, 12 + y, 2);
   spr.setTextDatum(BR_DATUM);
@@ -164,7 +177,7 @@ void drawLayoutSmeter(const char *statusLine1, const char *statusLine2)
   if(switchThemeEditor())
   {
     spr.setTextDatum(TR_DATUM);
-    spr.setTextColor(TH.text_warn, TH.bg);
+    spr.setTextColor(TH.text_warn);
     spr.drawString(TH.name, 319, BATT_OFFSET_Y + 17, 2);
   }
 

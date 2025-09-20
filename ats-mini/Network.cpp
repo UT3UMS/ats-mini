@@ -244,6 +244,7 @@ static bool wifiInitAP()
 static bool wifiConnect()
 {
   String status = "Connecting to WiFi network..";
+  wifi_mode_t mode = WiFi.getMode();
 
   // Get the preferences
   prefs.begin("network", true, STORAGE_PARTITION);
@@ -262,6 +263,10 @@ static bool wifiConnect()
 
     if(ssid != "")
     {
+      // Workaround for https://github.com/espressif/arduino-esp32/issues/11742
+      WiFi.mode(WIFI_MODE_NULL);
+      WiFi.mode(mode);
+
       WiFi.begin(ssid, password);
       for(int j=0 ; (WiFi.status()!=WL_CONNECTED) && (j<24) ; j++)
       {
@@ -440,9 +445,8 @@ void webSetConfig(AsyncWebServerRequest *request)
     prefsSave |= SAVE_SETTINGS;
   }
 
-  // Save scroll direction, tuning hold off, and menu zoom
+  // Save scroll direction and menu zoom
   scrollDirection = request->hasParam("scroll", true)? -1 : 1;
-  tuneHoldOff     = request->getParam("holdoff", true)->value().toInt();
   zoomMenu        = request->hasParam("zoom", true);
   prefsSave |= SAVE_SETTINGS;
 
@@ -972,15 +976,6 @@ const String webConfigPage()
 "</P>"
 "<FORM ACTION='/setconfig' METHOD='POST'>"
   "<TABLE COLUMNS=2>"
-  "<TR><TH COLSPAN=2 CLASS='HEADING'>Login Credentials</TH></TR>"
-  "<TR>"
-    "<TD CLASS='LABEL'>Username</TD>"
-    "<TD>" + webInputField("username", loginUsername) + "</TD>"
-  "</TR>"
-  "<TR>"
-    "<TD CLASS='LABEL'>Password</TD>"
-    "<TD>" + webInputField("password", loginPassword, true) + "</TD>"
-  "</TR>"
   "<TR><TH COLSPAN=2 CLASS='HEADING'>WiFi Network 1</TH></TR>"
   "<TR>"
     "<TD CLASS='LABEL'>SSID</TD>"
@@ -1008,6 +1003,15 @@ const String webConfigPage()
     "<TD CLASS='LABEL'>Password</TD>"
     "<TD>" + webInputField("wifipass3", pass3, true) + "</TD>"
   "</TR>"
+  "<TR><TH COLSPAN=2 CLASS='HEADING'>This Web UI Login Credentials</TH></TR>"
+  "<TR>"
+    "<TD CLASS='LABEL'>Username</TD>"
+    "<TD>" + webInputField("username", loginUsername) + "</TD>"
+  "</TR>"
+  "<TR>"
+    "<TD CLASS='LABEL'>Password</TD>"
+    "<TD>" + webInputField("password", loginPassword, true) + "</TD>"
+  "</TR>"
   "<TR><TH COLSPAN=2 CLASS='HEADING'>Settings</TH></TR>"
   "<TR>"
     "<TD CLASS='LABEL'>Time Zone</TD>"
@@ -1025,11 +1029,6 @@ const String webConfigPage()
     "<TD CLASS='LABEL'>Reverse Scrolling</TD>"
     "<TD><INPUT TYPE='CHECKBOX' NAME='scroll' VALUE='on'" +
     (scrollDirection<0? " CHECKED ":"") + "></TD>"
-  "</TR>"
-  "<TR>"
-    "<TD CLASS='LABEL'>Tuning Display Delay</TD>"
-    "<TD><INPUT TYPE='NUMBER' NAME='holdoff' VALUE='" +
-tuneHoldOff + "' MIN='0' MAX='255'></TD>"
   "</TR>"
    "<TR>"
     "<TD CLASS='LABEL'>Zoomed Menu</TD>"

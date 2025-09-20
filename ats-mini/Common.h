@@ -14,10 +14,10 @@
 #define AUTHORS_LINE3  "Goshante, G8PTN (Dave), R9UCL (Max Arnold),"
 #define AUTHORS_LINE4  "Marat Fayzullin"
 
-#define VER_APP        230  // Firmware version
+#define VER_APP        232  // Firmware version
 #define VER_SETTINGS   71   // Settings version
 #define VER_MEMORIES   71   // Memories version
-#define VER_BANDS      71   // Bands version
+#define VER_BANDS      72   // Bands version
 
 // Modes
 #define FM            0
@@ -88,7 +88,8 @@ typedef struct
   uint16_t currentFreq;   // Default frequency or current frequency
   int8_t currentStepIdx;  // Default frequency step
   int8_t bandwidthIdx;    // Index of the table bandwidthFM, bandwidthAM or bandwidthSSB;
-  int16_t bandCal;        // Calibration value
+  int16_t usbCal;         // USB calibration value
+  int16_t lsbCal;         // LSB calibration value
 } Band;
 
 typedef struct __attribute__((packed))
@@ -128,8 +129,6 @@ extern SI4735_fixed rx;
 extern TFT_eSprite spr;
 extern TFT_eSPI tft;
 
-extern bool tuning_flag;
-extern uint8_t tuneHoldOff;
 extern bool pushAndRotate;
 extern bool seekStop;
 extern uint8_t rssi;
@@ -137,7 +136,6 @@ extern uint8_t snr;
 
 extern uint8_t volume;
 extern uint8_t currentSquelch;
-extern bool squelchCutoff;
 extern uint16_t currentFrequency;
 extern int16_t currentBFO;
 extern uint8_t currentMode;
@@ -173,9 +171,9 @@ static inline bool isSSB() { return(currentMode>FM && currentMode<AM); }
 
 void useBand(const Band *band);
 bool updateBFO(int newBFO, bool wrap = true);
-bool doSeek(int8_t dir);
+bool doSeek(int16_t enc);
 bool clickFreq(bool shortPress);
-uint8_t doAbout(int dir);
+uint8_t doAbout(int16_t enc);
 bool checkStopSeeking();
 bool updateFrequency(int newFreq, bool wrap = true);
 

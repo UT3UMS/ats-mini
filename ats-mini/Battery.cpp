@@ -79,7 +79,7 @@ bool drawBattery(int x, int y)
   spr.drawLine(x + 30, y + 6, x + 30, y + 9, TH.batt_border);
 
   spr.setTextDatum(TR_DATUM);
-  spr.setTextColor(TH.batt_voltage, TH.bg);
+  spr.setTextColor(TH.batt_voltage);
 
   if(switchThemeEditor())
   {

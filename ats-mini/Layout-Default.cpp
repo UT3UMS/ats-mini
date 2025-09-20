@@ -31,7 +31,7 @@ void drawLayoutDefault(const char *statusLine1, const char *statusLine2)
   if(switchThemeEditor())
   {
     spr.setTextDatum(TR_DATUM);
-    spr.setTextColor(TH.text_warn, TH.bg);
+    spr.setTextColor(TH.text_warn);
     spr.drawString(TH.name, 319, BATT_OFFSET_Y + 17, 2);
   }
 

@@ -10,8 +10,6 @@ profiles:
       - Async TCP (3.4.7)
       - ESP Async WebServer (3.7.10)
       - NTPClient (3.2.1)
-      - NimBLE-Arduino (2.3.2)
-      - NuS-NimBLE-Serial (4.1.0)
 
   esp32s3-qspi:
     # If you change this line, change it in build.yml as well
@@ -24,7 +22,5 @@ profiles:
       - Async TCP (3.4.7)
       - ESP Async WebServer (3.7.10)
       - NTPClient (3.2.1)
-      - NimBLE-Arduino (2.3.2)
-      - NuS-NimBLE-Serial (4.1.0)
 
 default_profile: esp32s3-ospi

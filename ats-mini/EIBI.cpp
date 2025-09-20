@@ -1,6 +1,7 @@
 #include "Common.h"
 #include "Draw.h"
 #include "EIBI.h"
+#include "Button.h"
 
 #include <HTTPClient.h>
 #include <WiFi.h>
@@ -15,6 +16,8 @@
 #ifndef EIBI_URL
 #define EIBI_URL  "http://eibispace.de/dx/eibi.txt"
 #endif
+
+extern ButtonTracker pb1;
 
 const BandLabel bandLabels[] =
 {
@@ -418,6 +421,19 @@ bool eibiLoadSchedule()
 
   for(byteCnt = charCnt = lineCnt = 0 ; http.connected() && (totalLen<0 || byteCnt<totalLen) ; )
   {
+    if(pb1.update(digitalRead(ENCODER_PUSH_BUTTON) == LOW, 0).isPressed)
+    {
+      // Wait till the button is released, otherwise the main loop will register a click
+      while(pb1.update(digitalRead(ENCODER_PUSH_BUTTON) == LOW).isPressed)
+        delay(100);
+
+      file.close();
+      http.end();
+      LittleFS.remove(TEMP_PATH);
+      drawScreen(eibiMessage, "CANCELED!");
+      return(false);
+    }
+
     if(!stream->available()) delay(1);
     else
     {

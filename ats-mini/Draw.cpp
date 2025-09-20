@@ -76,7 +76,7 @@ bool drawWiFiStatus(const char *statusLine1, const char *statusLine2, int x, int
   {
     // Draw two lines of network status
     spr.setTextDatum(TC_DATUM);
-    spr.setTextColor(TH.rds_text, TH.bg);
+    spr.setTextColor(TH.rds_text);
     if(statusLine1) spr.drawString(statusLine1, x, y, 2);
     if(statusLine2) spr.drawString(statusLine2, x, y+17, 2);
     return(true);
@@ -94,7 +94,7 @@ void drawZoomedMenu(const char *text, bool force)
 
   spr.fillSmoothRoundRect(RDS_OFFSET_X - 72 + 1, RDS_OFFSET_Y - 3 + 1, 152, 26, 4, TH.menu_bg);
   spr.setTextDatum(TC_DATUM);
-  spr.setTextColor(TH.menu_item, TH.menu_bg);
+  spr.setTextColor(TH.menu_item);
   spr.drawString(text, RDS_OFFSET_X + 5, RDS_OFFSET_Y, 4);
   spr.drawSmoothRoundRect(RDS_OFFSET_X - 72, RDS_OFFSET_Y - 3, 4, 4, 154, 28, TH.menu_border, TH.menu_bg);
 }
@@ -116,11 +116,11 @@ void drawMessage(const char *msg)
 void drawBandAndMode(const char *band, const char *mode, int x, int y)
 {
   spr.setTextDatum(TC_DATUM);
-  spr.setTextColor(TH.band_text, TH.bg);
+  spr.setTextColor(TH.band_text);
   uint16_t band_width = spr.drawString(band, x, y);
 
   spr.setTextDatum(TL_DATUM);
-  spr.setTextColor(TH.mode_text, TH.bg);
+  spr.setTextColor(TH.mode_text);
   uint16_t mode_width = spr.drawString(mode, x + band_width / 2 + 12, y + 8, 2);
 
   spr.drawSmoothRoundRect(x + band_width / 2 + 7, y + 7, 4, 4, mode_width + 8, 17, TH.mode_border, TH.bg);
@@ -135,7 +135,7 @@ void drawRadioText(int y, int ymax)
 
   // Draw potentially multi-line radio text
   spr.setTextDatum(TC_DATUM);
-  spr.setTextColor(TH.rds_text, TH.bg);
+  spr.setTextColor(TH.rds_text);
   for(; *rt && (y<ymax) ; y+=17, rt+=strlen(rt)+1)
     spr.drawString(rt, 160, y, 2);
 
@@ -191,7 +191,7 @@ void drawFrequency(uint32_t freq, int x, int y, int ux, int uy, uint8_t hl)
   hl &= 0x7F;
 
   spr.setTextDatum(MR_DATUM);
-  spr.setTextColor(TH.freq_text, TH.bg);
+  spr.setTextColor(TH.freq_text);
 
   if(currentMode==FM)
   {
@@ -201,7 +201,7 @@ void drawFrequency(uint32_t freq, int x, int y, int ux, int uy, uint8_t hl)
     // FM frequency
     spr.drawFloat(freq/100.00, 2, x, y, 7);
     spr.setTextDatum(ML_DATUM);
-    spr.setTextColor(TH.funit_text, TH.bg);
+    spr.setTextColor(TH.funit_text);
     spr.drawString("MHz", ux, uy);
   }
   else
@@ -229,7 +229,7 @@ void drawFrequency(uint32_t freq, int x, int y, int ux, int uy, uint8_t hl)
     }
 
     // SSB/AM frequencies are measured in kHz
-    spr.setTextColor(TH.funit_text, TH.bg);
+    spr.setTextColor(TH.funit_text);
     spr.drawString("kHz", ux, uy);
   }
 
@@ -259,20 +259,24 @@ void drawScale(uint32_t freq)
   spr.drawLine(160, 130, 160, 169, TH.scale_pointer);
 
   spr.setTextDatum(MC_DATUM);
-  spr.setTextColor(TH.scale_text, TH.bg);
+  spr.setTextColor(TH.scale_text);
+
+  // Extra frequencies to draw outside the screen boundaries
+  // (ensures frequency numbers don't disappear at the edges)
+  int16_t slack = 3;
 
   // Scale offset
-  int16_t offset = (freq % 10) / 10.0 * 8;
+  int16_t offset = ((freq % 10) / 10.0 + slack) * 8;
 
   // Start drawing frequencies from the left
-  freq = freq / 10 - 20;
+  freq = freq / 10 - 20 - slack;
 
   // Get band edges
   const Band *band = getCurrentBand();
   uint32_t minFreq = band->minimumFreq / 10;
   uint32_t maxFreq = band->maximumFreq / 10;
 
-  for(int i=0 ; i<41 ; i++, freq++)
+  for(int i=0 ; i<(slack + 41 + slack) ; i++, freq++)
   {
     int16_t x = i * 8 - offset;
     if(freq >= minFreq && freq <= maxFreq)
@@ -340,7 +344,7 @@ void drawStereoIndicator(int x, int y, bool stereo)
 void drawStationName(const char *name, int x, int y)
 {
   spr.setTextDatum(TC_DATUM);
-  spr.setTextColor(TH.rds_text, TH.bg);
+  spr.setTextColor(TH.rds_text);
   spr.drawString(name, x, y, 4);
 }
 
@@ -350,7 +354,7 @@ void drawStationName(const char *name, int x, int y)
 void drawLongStationName(const char *name, int x, int y)
 {
   int width = spr.textWidth(name, 2);
-  spr.setTextColor(TH.rds_text, TH.bg);
+  spr.setTextColor(TH.rds_text);
 
   if((x + width) >= 320)
   {
@@ -425,9 +429,6 @@ void drawScanGraphs(uint32_t freq)
 void drawScreen(const char *statusLine1, const char *statusLine2)
 {
   if(sleepOn()) return;
-
-  // Do not update the screen while tuning (if enabled)
-  if(tuneHoldOff && tuning_flag) return;
 
   // Clear screen buffer
   spr.fillSprite(TH.bg);

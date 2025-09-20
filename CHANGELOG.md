@@ -4,6 +4,56 @@ The user manual is available at <https://esp32-si4732.github.io/ats-mini/manual.
 
 <!-- towncrier release notes start -->
 
+## 2.32 (2025-09-16)
+
+
+### Removed
+
+- Remove the dynamic CPU frequecy feature introduced in v2.31 (it caused sound artifacts when rotating the encoder). [#244](https://github.com/esp32-si4732/ats-mini/issues/244)
+- Do not show the "Add" hint on an empty memory slot to prevent confusion with click vs short press.
+
+
+### Changed
+
+- Avoid drawing background color when drawing text. This dramatically helps UI customization modding efforts (like setting a background image instead of a plain color, [for example](https://github.com/esp32-si4732/ats-mini/discussions/240)). [#239](https://github.com/esp32-si4732/ats-mini/issues/239)
+- Move the Web UI credentials form fields below the Wi-Fi settings. [#241](https://github.com/esp32-si4732/ats-mini/issues/241)
+
+
+### Fixed
+
+- Fix Wi-Fi connection issue to 2nd or 3rd access point configured on the settings web page. [#244](https://github.com/esp32-si4732/ats-mini/issues/244)
+
+## 2.31 (2025-09-13)
+
+
+### Removed
+
+- Remove faster tuning in Seek mode on SSB and in Scan mode via press & rotate in favor of the new accelerated encoder control.
+- Remove the ENABLE_HOLDOFF compile-time option.
+
+
+### Added
+
+- Encoder acceleration.
+- Encoder click now cancels the EiBi schedule download process.
+
+
+### Changed
+
+- Reduce the upper CB band limit to 28MHz. [#205](https://github.com/esp32-si4732/ats-mini/issues/205)
+- Independent USB/LSB calibration values. WARNING: this change will reset the bands settings. [#220](https://github.com/esp32-si4732/ats-mini/issues/220)
+- Render partial frequency numbers on the tuning scale around screen edges. [#235](https://github.com/esp32-si4732/ats-mini/issues/235)
+- Disable the Memory menu timeout (it is a surfing mode like Seek or Scan). Short press (0.5 sec) saves/clears a slot, click closes the menu.
+- EXPERIMENTAL: overclock the I2C bus to 800kHz (affects Si4732).
+- Set CPU freq to 240 MHz on encoder rotation, drop back to 80 MHz after 10 seconds of no activity. This results in snappier UI.
+
+
+### Fixed
+
+- Fix AVC wrapping to avoid selecting odd AVC values. [#207](https://github.com/esp32-si4732/ats-mini/issues/207)
+- Add 100ms delay after Si4732 POWER_ON to fix the "Si4732 not detected" issue [#213](https://github.com/esp32-si4732/ats-mini/issues/213)
+- Fix misbehaving squelch when changing bands.
+
 ## 2.30 (2025-08-07)
 
 

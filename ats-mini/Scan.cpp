@@ -141,7 +141,7 @@ void scanRun(uint16_t centerFreq, uint16_t step)
   // Set tuning delay
   rx.setMaxDelaySetFrequency(currentMode == FM ? TUNE_DELAY_FM : TUNE_DELAY_AM_SSB);
   // Mute the audio
-  tempMuteOn(true);
+  muteOn(MUTE_TEMP, true);
   // Flag is set by rotary encoder and cleared on seek/scan entry
   seekStop = false;
   // Save current frequency
@@ -151,7 +151,7 @@ void scanRun(uint16_t centerFreq, uint16_t step)
   // Restore current frequency
   rx.setFrequency(curFreq);
   // Unmute the audio
-  tempMuteOn(false);
+  muteOn(MUTE_TEMP, false);
   // Restore tuning delay
   rx.setMaxDelaySetFrequency(TUNE_DELAY_DEFAULT);
 }
