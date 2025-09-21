@@ -388,6 +388,44 @@ static void webInit()
   }
   });
 
+  server.on("/set_memory", HTTP_GET, [](AsyncWebServerRequest *request) {
+    // 1. Check for required parameters
+    if (!request->hasParam("slot") ||
+        !request->hasParam("band") ||
+        !request->hasParam("freq") ||
+        !request->hasParam("mode")) {
+        request->send(400, "application/json", "{\"error\":\"missing_parameter\"}");
+        return;
+    }
+
+    // 2. Extract and convert parameters
+    int slot = request->getParam("slot")->value().toInt();
+    String band = request->getParam("band")->value();
+    uint32_t freq = request->getParam("freq")->value().toInt();
+    String mode = request->getParam("mode")->value();
+
+    // 3. Call your memory setter
+    int result = rememberFreqSlot(slot, band.c_str(), freq, mode.c_str());
+
+    switch (result) {
+    case 0:
+      request->send(200, "application/json", "{\"result\":\"ok\"}");
+      break;
+    case -1:
+      request->send(400, "application/json", "{\"error\":\"invalid_slot\"}");
+      break;
+    case -10:
+      request->send(400, "application/json", "{\"error\":\"band_not_found\"}");
+      break;
+    case -11:
+      request->send(400, "application/json", "{\"error\":\"mode_not_found\"}");
+      break;
+    case -12:
+      request->send(400, "application/json", "{\"error\":\"invalid_frequency_or_mode\"}");
+      break;
+    }
+  });
+
   // Start web server
   server.begin();
 }

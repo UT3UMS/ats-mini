@@ -225,6 +225,7 @@ int8_t getBleStatus();
 #define REMOTE_DIRECTION 8
 void remoteTickTime();
 int remoteDoCommand(char key);
+int rememberFreqSlot(int slot, const char* bandName, uint32_t freq, const char* modeName);
 char readSerialChar();
 
 #endif // COMMON_H

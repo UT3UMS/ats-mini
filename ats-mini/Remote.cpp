@@ -134,7 +134,6 @@ static void remoteGetMemories()
   }
 }
 
-
 static bool remoteSetMemory()
 {
   Serial.print('#');
@@ -205,6 +204,71 @@ static bool remoteSetMemory()
 
   memories[slot-1] = mem;
   return true;
+}
+
+//
+// SetMemory function but for WiFi control
+//
+int rememberFreqSlot(int slot, const char* bandName, uint32_t freq, const char* modeName) {
+  if (slot < 1 || slot > getTotalMemories()) {
+    return -1; // INVALID_SLOT;
+  }
+
+  Memory mem;
+  mem.band = 0xFF;
+
+  // --- Find matching band
+  for (int i = 0; i < getTotalBands(); i++) {
+    if (strcmp(bands[i].bandName, bandName) == 0) {
+      mem.band = i;
+      break;
+    }
+  }
+
+  if (mem.band == 0xFF) {
+    return -10; //BAND_NOT_FOUND;
+  }
+
+  // --- Find matching mode
+  mem.mode = 15;
+  for (int i = 0; i < getTotalModes(); i++) {
+    if (strcmp(bandModeDesc[i], modeName) == 0) {
+      mem.mode = i;
+      break;
+    }
+  }
+
+  if (mem.mode == 15) {
+    return -11; // MODE_NOT_FOUND;
+  }
+
+  mem.freq = freq;
+
+  // --- Clear slot
+  if (!freq) {
+    memories[slot - 1] = mem;
+    return 0; // OK
+  }
+
+  // --- Validate memory in band
+  if (!isMemoryInBand(&bands[mem.band], &mem)) {
+    // Fallback: try from end for duplicate band names
+    mem.band = 0xFF;
+    for (int i = getTotalBands() - 1; i >= 0; i--) {
+      if (strcmp(bands[i].bandName, bandName) == 0) {
+        mem.band = i;
+        break;
+      }
+    }
+
+    if (mem.band == 0xFF || !isMemoryInBand(&bands[mem.band], &mem)) {
+      return -12; // INVALID_FREQUENCY;
+    }
+  }
+
+  // --- All good
+  memories[slot - 1] = mem;
+  return 0; // OK
 }
 
 //
